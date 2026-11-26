@@ -57,6 +57,9 @@ require_once $src_dir . '/sanitise.php';
 require_once $src_dir . '/validate.php';
 require_once $src_dir . '/render.php';
 require_once $src_dir . '/routing.php';
+require_once $src_dir . '/trial.php';
+require_once $src_dir . '/clicksites.php';
+require_once $src_dir . '/writer.php';
 require_once $src_dir . '/importer.php';
 require_once $repo_root . '/reference/zz-apd-core.php';
 
@@ -189,15 +192,17 @@ t_eq('pets', apd_site_trade_family('dog-walking'), 'dog-walking is in the pets f
  * 3. Gallery
  * ------------------------------------------------------------------ */
 echo "\nGallery\n";
-$gallery = apd_site_gallery($templates, array('plumber'));
-t_eq(3, count($gallery), 'gallery lists the 3 Example layout templates for a plumber listing');
-$all_example = true;
+$gallery      = apd_site_gallery($templates, array('plumber'));
+$gallery_keys = array_keys($gallery);
+t_eq(4, count($gallery), 'gallery lists the plumbing template plus the 3 Example layouts for a plumber');
+t_eq('plumbing-a', $gallery_keys[0], 'the trade specific template sorts before the Example layouts');
+$example_count = 0;
 foreach ($gallery as $meta) {
-    if (empty($meta['example'])) {
-        $all_example = false;
+    if (!empty($meta['example'])) {
+        $example_count++;
     }
 }
-t_ok($all_example, 'the 3 listed templates are marked as example layouts');
+t_eq(3, $example_count, 'the 3 Example layouts are marked example:true');
 
 $gallery_tmp = $work_dir . '/gallery';
 rrmdir($gallery_tmp);
@@ -257,7 +262,220 @@ t_eq(200, apd_site_route_status('/site/1-my-plumbing/', false, true), 'the route
 t_eq(404, apd_site_route_status('/some/other/path/', false, true), 'unrelated paths are not handled');
 
 /* ------------------------------------------------------------------ *
- * 6. php -l on every file
+ * 6. Real ClickSites designs
+ * ------------------------------------------------------------------ */
+echo "\nReal ClickSites designs\n";
+$real_templates = array(
+    'cleaning-a'   => 'cleaning',
+    'cleaning-b'   => 'cleaning',
+    'electrical-a' => 'electrical',
+    'plumbing-a'   => 'plumbing',
+);
+foreach ($real_templates as $tid => $family) {
+    $meta = apd_site_load_meta($templates, $tid);
+    if (!is_array($meta)) {
+        t_ok(false, $tid . ': meta.json loads');
+        continue;
+    }
+    t_ok(true, $tid . ': meta.json loads');
+    t_eq(false, $meta['example'] ?? null, $tid . ': meta.json has example:false');
+    t_eq($family, (string) ($meta['family'] ?? ''), $tid . ': meta family is ' . $family);
+
+    $thumb = (string) ($meta['thumbnail'] ?? '');
+    t_ok('' !== $thumb && is_file($templates . '/' . $tid . '/' . $thumb), $tid . ': thumbnail file exists');
+
+    $html = apd_site_template_html($templates, $tid);
+    t_ok(is_string($html) && '' !== $html, $tid . ': template.html exists');
+    $html = (string) $html;
+    t_ok(false === stripos($html, '<script'), $tid . ': no <script> left');
+    t_ok(false === stripos($html, 'clicksite'), $tid . ': no ClickSites branding left');
+    t_ok(false === stripos($html, '__NEXT_DATA__'), $tid . ': no __NEXT_DATA__ left');
+    t_ok(false === stripos($html, 'onclick'), $tid . ': no onclick attributes left');
+    t_ok(false === stripos($html, 'javascript:'), $tid . ': no javascript: URLs left');
+    t_ok(false === stripos($html, 'google-analytics'), $tid . ': no analytics left');
+    t_ok(false !== strpos($html, '{{business_name}}'), $tid . ': business_name placeholder present');
+    t_ok(false !== strpos($html, '{{phone}}'), $tid . ': phone placeholder present');
+    t_ok(false !== strpos($html, '{{#each services}}'), $tid . ': services block present');
+    t_ok(false !== strpos($html, '{{#each testimonials}}'), $tid . ': testimonials block present (hidden until real)');
+    t_ok(0 === preg_match('/\b\d+\s*%/', $html), $tid . ': no made-up percentage claims');
+    t_ok(
+        0 === preg_match('/\b(?:years?\s+(?:of\s+)?experience|award[- ]winning|established|satisfaction guaranteed)\b/i', $html),
+        $tid . ': no made-up awards or experience claims'
+    );
+
+    // The four real exports must still resolve their trades from the design family.
+    $expected = apd_site_design_family_trades($family);
+    t_eq($expected, $meta['trades'] ?? array(), $tid . ': trades come from the ' . $family . ' family');
+}
+
+/* ------------------------------------------------------------------ *
+ * 7. Importer on a Next.js export
+ * ------------------------------------------------------------------ */
+echo "\nImporter (Next.js)\n";
+$nd_fixture = $fixtures . '/nextjs-sample';
+$nd_out     = $work_dir . '/nextjs-import';
+rrmdir($nd_out);
+$report_nd = apd_site_import_clicksites($nd_fixture, $nd_out, array(
+    'id'     => 'nextjs-import',
+    'name'   => 'Next.js Import',
+    'family' => 'cleaning',
+));
+t_eq('nextjs', $report_nd['mode'] ?? '', 'a Next.js export is rebuilt from __NEXT_DATA__');
+
+$nd_html = is_file($nd_out . '/template.html') ? (string) file_get_contents($nd_out . '/template.html') : '';
+t_ok(false === stripos($nd_html, '<script'), 'rebuilt template has no scripts');
+t_ok(false === stripos($nd_html, 'clicksite'), 'rebuilt template has no ClickSites branding');
+t_ok(false !== strpos($nd_html, '{{business_name}}'), 'rebuilt template keeps the business_name placeholder');
+t_ok(false !== strpos($nd_html, '{{#each services}}'), 'rebuilt template keeps the services block');
+
+$nd_meta = json_decode((string) file_get_contents($nd_out . '/meta.json'), true);
+t_ok(is_array($nd_meta) && false === ($nd_meta['example'] ?? null), 'rebuilt meta.json has example:false');
+t_eq('cleaning', (string) ($nd_meta['family'] ?? ''), 'rebuilt meta.json keeps the family');
+t_eq(apd_site_design_family_trades('cleaning'), $nd_meta['trades'] ?? array(), 'rebuilt meta.json resolves the family trades');
+
+$removed_blob = strtolower(implode(' | ', $report_nd['removed']));
+t_ok(false !== strpos($removed_blob, 'testimonial'), 'importer drops the demo testimonials (no fake reviews)');
+t_ok(false !== strpos($removed_blob, 'claim'), 'importer reports the made-up claims it removed');
+
+// If a real export is on disk, its payload must parse too.
+$real_src = $repo_root . '/import/cleaning-a/index.html';
+if (is_file($real_src)) {
+    $nd_real = apd_site_cs_next_data((string) file_get_contents($real_src));
+    t_ok(is_array($nd_real) && !empty($nd_real['content']), 'a real ClickSites export parses from __NEXT_DATA__ (cleaning-a)');
+} else {
+    echo "  NOTE  import/cleaning-a not on disk, skipped the real-export parse check\n";
+}
+
+/* ------------------------------------------------------------------ *
+ * 8. Rendering with missing fields
+ * ------------------------------------------------------------------ */
+echo "\nRendering with missing fields\n";
+$empty_rendered = apd_site_render($templates, 'cleaning-a', array());
+t_ok(false === strpos($empty_rendered, '{{'), 'no unrendered placeholders when every field is missing');
+t_ok(false === stripos($empty_rendered, '<script'), 'missing data never introduces a script');
+t_ok(false !== strpos($empty_rendered, 'Call '), 'the phone call link still renders');
+
+$partial = apd_site_render($templates, 'cleaning-a', array('business_name' => 'Bob', 'phone' => '0400 000 000'));
+t_ok(false !== strpos($partial, 'Bob'), 'partial data renders the business name');
+t_ok(false === strpos($partial, 'apd-card'), 'no service cards render when services are empty');
+t_ok(false === strpos($partial, 'apd-testimonials'), 'the testimonials section stays hidden with no real reviews');
+
+$stock_merged = apd_site_stock_merge(
+    array(
+        'hero_image' => 'images/hero.webp',
+        'gallery'    => array(array('image' => 'images/g1.webp', 'caption' => '')),
+    ),
+    array(),
+    '/base'
+);
+t_eq('/base/images/hero.webp', $stock_merged['hero_image'], 'the stock hero image fills an empty slot');
+t_eq('/base/images/g1.webp', $stock_merged['gallery'][0]['image'], 'the stock gallery gets the base URL prefix');
+
+/* ------------------------------------------------------------------ *
+ * 9. Owner access
+ * ------------------------------------------------------------------ */
+echo "\nOwner access\n";
+t_ok(apd_site_can_manage(5, 5, false), 'the listing owner can manage their own site');
+t_ok(!apd_site_can_manage(5, 7, false), 'another logged-in user cannot manage the site');
+t_ok(!apd_site_can_manage(5, 0, false), 'a logged-out visitor cannot manage the site');
+t_ok(apd_site_can_manage(5, 0, true), 'an admin can manage any site');
+
+$owner_route = apd_site_match_route('/my-site/12/');
+t_ok(
+    is_array($owner_route) && 'owner' === $owner_route['route'] && 12 === $owner_route['listing_id'],
+    '/my-site/<listing-id>/ matches the owner route'
+);
+$live_route = apd_site_match_route('/site/bob-plumbing/');
+t_ok(
+    is_array($live_route) && 'live' === $live_route['route'] && 'bob-plumbing' === $live_route['slug'],
+    '/site/<slug>/ matches the live route'
+);
+
+/* ------------------------------------------------------------------ *
+ * 10. The no-AI writer
+ * ------------------------------------------------------------------ */
+echo "\nWriter (no-AI) for every family\n";
+$writer_trades = array(
+    'build'   => 'electrician',
+    'outdoor' => 'gardener',
+    'home'    => 'cleaner',
+    'auto'    => 'mechanic',
+    'repair'  => 'appliance-repair',
+    'pets'    => 'dog-walking',
+    'pro'     => 'tutor',
+);
+foreach ($writer_trades as $family => $trade) {
+    $ctx  = array(
+        'business_name' => 'Northside ' . $trade,
+        'trade'         => $trade,
+        'suburb'        => 'Parramatta',
+        'state'         => 'NSW',
+        'service_area'  => 'Parramatta',
+        'services'      => array(array('title' => 'General work')),
+    );
+    $copy = apd_site_write_copy($ctx);
+    $ok   = '' !== trim((string) ($copy['hero_heading'] ?? ''))
+        && '' !== trim((string) ($copy['hero_sub'] ?? ''))
+        && '' !== trim((string) ($copy['about'] ?? ''))
+        && '' !== trim((string) ($copy['cta_text'] ?? ''));
+    t_ok($ok, $family . ': the writer fills every text field');
+    t_ok('' !== trim((string) ($copy['services'][0]['text'] ?? '')), $family . ': each service gets its own short line');
+    $blob = implode(' ', array(
+        (string) ($copy['hero_heading'] ?? ''),
+        (string) ($copy['hero_sub'] ?? ''),
+        (string) ($copy['about'] ?? ''),
+        (string) ($copy['services'][0]['text'] ?? ''),
+    ));
+    t_ok(false === strpos($blob, '{'), $family . ': no unfilled {placeholders} remain');
+    t_ok(0 === preg_match('/\b\d+\s*%/', $blob), $family . ': no made-up percentage claims');
+}
+
+$copy_a = apd_site_write_copy(array('business_name' => 'Alpha Cleaning', 'trade' => 'cleaner', 'suburb' => 'Ryde'));
+$copy_b = apd_site_write_copy(array('business_name' => 'Zeta Cleaning', 'trade' => 'cleaner', 'suburb' => 'Ryde'));
+t_ok(
+    $copy_a['about'] !== $copy_b['about'] || $copy_a['hero_heading'] !== $copy_b['hero_heading'],
+    'different businesses get different wording'
+);
+
+$ai_ctx = array(
+    'business_name' => 'Fallback Co',
+    'trade'         => 'plumber',
+    'suburb'        => 'Bondi',
+    'services'      => array(array('title' => 'Blocked drains')),
+);
+t_ok(!apd_sites_ai_enabled(), 'the AI writer is disabled while APD_SITES_AI is off');
+t_ok(null === apd_sites_ai_write($ai_ctx), 'the AI writer returns null when no key is available');
+t_eq(apd_site_write_copy($ai_ctx), apd_sites_write_copy($ai_ctx), 'apd_sites_write_copy falls back to the no-AI writer');
+
+/* ------------------------------------------------------------------ *
+ * 11. Trial and publish
+ * ------------------------------------------------------------------ */
+echo "\nTrial and publish\n";
+t_eq('Free 14-day trial, then A$9/month or A$49/year (GST included)', apd_site_plan_text(), 'the plan text matches the offer');
+t_eq(14, apd_site_trial_days(), 'the free trial is 14 days');
+
+$pub = apd_site_publish_fields('2026-01-01 09:00:00');
+t_eq('pending', $pub['status'], 'publishing sends the site to the review queue');
+t_eq('2026-01-01 09:00:00', $pub['trial_start'], 'publishing stores the trial start time');
+
+$start = '2026-01-01 09:00:00';
+$t0    = (int) strtotime($start);
+t_eq(14, apd_site_trial_days_left($start, $t0), 'a fresh trial has 14 days left');
+t_eq(1, apd_site_trial_days_left($start, $t0 + 13 * DAY_IN_SECONDS), 'the last trial day still shows 1 day left');
+t_eq(0, apd_site_trial_days_left($start, $t0 + 14 * DAY_IN_SECONDS), 'an ended trial shows 0 days left');
+
+t_eq('review', apd_site_trial_state('pending', $start, $t0, false), 'a pending site reads as in review');
+t_eq('trial', apd_site_trial_state('live', $start, $t0, false), 'an approved site during its trial reads as trial');
+t_eq('expired', apd_site_trial_state('live', $start, $t0 + 15 * DAY_IN_SECONDS, false), 'an ended trial with billing off reads as expired');
+t_eq('live', apd_site_trial_state('live', $start, $t0 + 15 * DAY_IN_SECONDS, true), 'with billing on an ended trial stays live');
+t_eq('rejected', apd_site_trial_state('rejected', $start, $t0, false), 'a rejected site reads as rejected');
+
+t_ok(!apd_site_billing_required(true, false), 'with billing off nothing is ever billing-required');
+t_ok(apd_site_billing_required(true, true), 'with billing on the filter decides');
+t_ok(!apd_site_billing_required(false, true), 'with billing on and an empty filter, nothing is required');
+
+/* ------------------------------------------------------------------ *
+ * 12. php -l on every file
  * ------------------------------------------------------------------ */
 echo "\nphp -l\n";
 $php_files = array($repo_root . '/zz-apd-sites.php');

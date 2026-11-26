@@ -73,13 +73,37 @@ if (!function_exists('apd_site_template_css')) {
     }
 }
 
-if (!function_exists('apd_site_render_each')) {
+if (!function_exists('apd_site_truthy')) {
     /**
-     * Expand {{#each key}}...{{/each}} blocks.
+     * Truthiness for {{#if}} blocks: empty strings and empty arrays are false.
+     *
+     * @param mixed $value
      */
-    function apd_site_render_each(string $html, array $data): string
+    function apd_site_truthy($value): bool
     {
-        return (string) preg_replace_callback(
+        if (is_array($value)) {
+            return count($value) > 0;
+        }
+        if (is_bool($value)) {
+            return $value;
+        }
+        if (is_numeric($value)) {
+            return (float) $value != 0.0;
+        }
+        return '' !== trim((string) $value);
+    }
+}
+
+if (!function_exists('apd_site_render_blocks')) {
+    /**
+     * Expand {{#each}} and {{#if}} blocks, then replace {{field}} tokens.
+     *
+     * Blocks are expanded outermost first and each row recurses with its own
+     * context, so a {{#if}} nested inside a {{#each}} still sees the row values.
+     */
+    function apd_site_render_blocks(string $html, array $data): string
+    {
+        $html = (string) preg_replace_callback(
             '/\{\{#each\s+([A-Za-z0-9_]+)\s*\}\}(.*?)\{\{\/each\}\}/s',
             static function ($m) use ($data) {
                 $key   = $m[1];
@@ -88,12 +112,24 @@ if (!function_exists('apd_site_render_each')) {
                 $out   = '';
                 foreach ($items as $item) {
                     $row = is_array($item) ? $item : array('this' => $item);
-                    $out .= apd_site_render_fields($inner, $row);
+                    $out .= apd_site_render_blocks($inner, $row);
                 }
                 return $out;
             },
             $html
         );
+
+        $html = (string) preg_replace_callback(
+            '/\{\{#if\s+([A-Za-z0-9_]+)\s*\}\}(.*?)\{\{\/if\}\}/s',
+            static function ($m) use ($data) {
+                $key   = $m[1];
+                $value = array_key_exists($key, $data) ? $data[$key] : null;
+                return apd_site_truthy($value) ? apd_site_render_blocks($m[2], $data) : '';
+            },
+            $html
+        );
+
+        return apd_site_render_fields($html, $data);
     }
 }
 
@@ -131,9 +167,7 @@ if (!function_exists('apd_site_render')) {
         if (null === $html) {
             return '';
         }
-        $html = apd_site_render_each($html, $data);
-        $html = apd_site_render_fields($html, $data);
-        return trim($html);
+        return trim(apd_site_render_blocks($html, $data));
     }
 }
 
@@ -164,6 +198,9 @@ if (!function_exists('apd_site_render_document')) {
         $lang     = isset($opts['lang']) ? (string) $opts['lang'] : 'en-AU';
         $footer   = isset($opts['footer']) ? (string) $opts['footer'] : '';
         $indexing = array_key_exists('indexing', $opts) ? (bool) $opts['indexing'] : true;
+        $fonts    = isset($opts['fonts']) && is_array($opts['fonts'])
+            ? $opts['fonts']
+            : (isset($meta['fonts']) && is_array($meta['fonts']) ? $meta['fonts'] : array());
 
         $head   = array();
         $head[] = '<meta charset="utf-8">';
@@ -172,6 +209,14 @@ if (!function_exists('apd_site_render_document')) {
         $head[] = '<title>' . apd_site_escape($title) . '</title>';
         if ('' !== $desc) {
             $head[] = '<meta name="description" content="' . apd_site_escape($desc) . '">';
+        }
+        if ($fonts) {
+            // Google Fonts are the only external font source kept.
+            $head[] = '<link rel="preconnect" href="https://fonts.googleapis.com">';
+            $head[] = '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
+            $head[] = '<link rel="stylesheet" href="' . apd_site_escape('https://fonts.googleapis.com/css2?' . implode('&', array_map(static function ($f) {
+                return 'family=' . rawurlencode((string) $f);
+            }, $fonts)) . '&display=swap') . '">';
         }
         if ('' !== $css) {
             $head[] = '<style>' . $css . '</style>';
@@ -254,5 +299,95 @@ if (!function_exists('apd_site_gallery')) {
         ksort($matched);
         ksort($wildcard);
         return array_merge($matched, $wildcard);
+    }
+}
+
+if (!function_exists('apd_site_templates_ranked')) {
+    /**
+     * Every template in a root, trade specific matches first, then the rest.
+     * Used by the builder so the owner sees a design for their trade at the top.
+     */
+    function apd_site_templates_ranked(string $root, array $trades): array
+    {
+        $templates = apd_site_list_templates($root);
+        $first     = array();
+        $rest      = array();
+        foreach ($templates as $id => $meta) {
+            $template_trades = (isset($meta['trades']) && is_array($meta['trades'])) ? $meta['trades'] : array();
+            $exact = !in_array('*', $template_trades, true) && apd_site_template_matches($meta, $trades);
+            if ($exact) {
+                $first[$id] = $meta;
+            } else {
+                $rest[$id] = $meta;
+            }
+        }
+        ksort($first);
+        ksort($rest);
+        return array_merge($first, $rest);
+    }
+}
+
+if (!function_exists('apd_site_stock_merge')) {
+    /**
+     * Fill empty image slots from a template's stock set.
+     *
+     * @param array  $stock Template stock: hero_image, about_image, gallery[],
+     *                      services[].image, why_us[].image (paths relative to the
+     *                      template folder).
+     * @param array  $data  Owner data.
+     * @param string $base  Absolute URL prefix for the template folder.
+     * @return array Owner data with the gaps filled.
+     */
+    function apd_site_stock_merge(array $stock, array $data, string $base = ''): array
+    {
+        $url = static function ($path) use ($base) {
+            $path = (string) $path;
+            if ('' === $path || preg_match('#^(?:https?:)?//#i', $path)) {
+                return $path;
+            }
+            return rtrim($base, '/') . '/' . ltrim($path, '/');
+        };
+
+        if (empty($data['hero_image']) && !empty($stock['hero_image'])) {
+            $data['hero_image'] = $url($stock['hero_image']);
+        }
+        if (empty($data['about_image']) && !empty($stock['about_image'])) {
+            $data['about_image'] = $url($stock['about_image']);
+        }
+        if (empty($data['gallery']) && !empty($stock['gallery']) && is_array($stock['gallery'])) {
+            $data['gallery'] = array_values(array_filter(array_map(static function ($g) use ($url) {
+                if (!is_array($g) || empty($g['image'])) {
+                    return null;
+                }
+                return array('image' => $url($g['image']), 'caption' => (string) ($g['caption'] ?? ''));
+            }, $stock['gallery'])));
+        }
+
+        foreach (array('services', 'why_us') as $field) {
+            if (empty($data[$field]) || !is_array($data[$field]) || empty($stock[$field]) || !is_array($stock[$field])) {
+                continue;
+            }
+            $images = array();
+            foreach ($stock[$field] as $slot) {
+                if (is_array($slot) && !empty($slot['image'])) {
+                    $images[] = $url($slot['image']);
+                }
+            }
+            if (!$images) {
+                continue;
+            }
+            $i = 0;
+            foreach ($data[$field] as $idx => $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+                if (empty($item['image'])) {
+                    $data[$field][$idx]['image'] = $images[$i % count($images)];
+                }
+                $i++;
+            }
+        }
+
+        return $data;
     }
 }

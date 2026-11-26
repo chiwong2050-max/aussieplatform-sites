@@ -26,8 +26,8 @@ if (!function_exists('apd_site_match_route')) {
         if (preg_match('#^/my-site/(\d+)/?$#', $path, $m)) {
             return array('route' => 'owner', 'listing_id' => (int) $m[1], 'slug' => '');
         }
-        if (preg_match('#^/site/(\d+)-([a-z0-9-]+)/?$#', $path, $m)) {
-            return array('route' => 'live', 'listing_id' => (int) $m[1], 'slug' => $m[2]);
+        if (preg_match('#^/site/([a-z0-9-]+)/?$#', $path, $m)) {
+            return array('route' => 'live', 'listing_id' => 0, 'slug' => $m[1]);
         }
         return null;
     }
@@ -51,6 +51,26 @@ if (!function_exists('apd_site_route_gate')) {
             return 404;
         }
         return 200;
+    }
+}
+
+if (!function_exists('apd_site_can_manage')) {
+    /**
+     * Only the listing owner or an admin may open the website builder.
+     *
+     * @param int  $listing_user_id The user_id on the listing row.
+     * @param int  $current_user_id The logged-in user, 0 when logged out.
+     * @param bool $is_admin        Does the viewer have manage_options?
+     */
+    function apd_site_can_manage(int $listing_user_id, int $current_user_id, bool $is_admin): bool
+    {
+        if ($is_admin) {
+            return true;
+        }
+        if ($current_user_id <= 0) {
+            return false;
+        }
+        return $listing_user_id === $current_user_id;
     }
 }
 

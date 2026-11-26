@@ -1,0 +1,186 @@
+{
+    "id": "cleaning-b",
+    "name": "Fresh Home Cleaning",
+    "example": false,
+    "family": "cleaning",
+    "trades": [
+        "cleaner",
+        "carpet-cleaning",
+        "window-cleaning"
+    ],
+    "thumbnail": "images/modern_bright_living_room_with_1d156f1373323da6a50ecf08898e2.webp",
+    "fonts": [
+        "Poppins:wght@400;600;700"
+    ],
+    "colors": {
+        "bg": "#ffffff",
+        "accent": "#0b6bcb",
+        "accent2": "#084d92",
+        "muted": "#5a6b78",
+        "font": "Poppins, system-ui, sans-serif"
+    },
+    "fields": [
+        {
+            "key": "business_name",
+            "label": "Business name",
+            "type": "text",
+            "required": true,
+            "max": 80
+        },
+        {
+            "key": "phone",
+            "label": "Phone",
+            "type": "tel",
+            "required": true,
+            "max": 32
+        },
+        {
+            "key": "email",
+            "label": "Email",
+            "type": "email",
+            "required": false,
+            "max": 120
+        },
+        {
+            "key": "suburb",
+            "label": "Suburb",
+            "type": "text",
+            "required": false,
+            "max": 60
+        },
+        {
+            "key": "state",
+            "label": "State",
+            "type": "text",
+            "required": false,
+            "max": 20
+        },
+        {
+            "key": "service_area",
+            "label": "Service area",
+            "type": "text",
+            "required": false,
+            "max": 120
+        },
+        {
+            "key": "abn",
+            "label": "ABN",
+            "type": "text",
+            "required": false,
+            "max": 20
+        },
+        {
+            "key": "licence",
+            "label": "Licence",
+            "type": "text",
+            "required": false,
+            "max": 60
+        },
+        {
+            "key": "logo",
+            "label": "Logo URL",
+            "type": "url",
+            "required": false,
+            "max": 240
+        },
+        {
+            "key": "hero_heading",
+            "label": "Headline",
+            "type": "text",
+            "required": false,
+            "max": 120
+        },
+        {
+            "key": "hero_sub",
+            "label": "Sub-heading",
+            "type": "text",
+            "required": false,
+            "max": 200
+        },
+        {
+            "key": "about",
+            "label": "About",
+            "type": "textarea",
+            "required": false,
+            "max": 1200
+        },
+        {
+            "key": "cta_text",
+            "label": "Call to action",
+            "type": "text",
+            "required": false,
+            "max": 60
+        },
+        {
+            "key": "hours",
+            "label": "Hours",
+            "type": "text",
+            "required": false,
+            "max": 120
+        }
+    ],
+    "stock": {
+        "hero_image": "images/modern_bright_living_room_with_1d156f1373323da6a50ecf08898e2.webp",
+        "about_image": "images/professional_cleaning_team_in_49cbc05e56cc2581ef3e8cbbfa6dba.webp",
+        "gallery": [
+            {
+                "image": "images/1795704646940_7036c20e.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795704646724_7e5aa004.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795704647241_9b98bf36.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795704646435_9a4a1f51.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795704647011_1cca6baa.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795704647569_73dc0270.webp",
+                "caption": ""
+            }
+        ],
+        "services": [
+            {
+                "title": "Residential Cleaning",
+                "text": "Regular home cleaning tailored to your lifestyle, including kitchens, bathrooms, bedrooms, and living areas. Enjoy a spotless home without lifting a finger.",
+                "image": "images/cleaner_vacuuming_a_cozy_livin_d4f2ad4332eaf434023b6ad76bb3a.webp"
+            },
+            {
+                "title": "Commercial Cleaning",
+                "text": "Professional janitorial services for offices, retail, and medical facilities. We ensure a clean, healthy workspace that impresses clients and boosts employee morale.",
+                "image": "images/janitor_in_uniform_cleaning_a_a161adcc886e7a5292ea75625cfe03.webp"
+            },
+            {
+                "title": "Deep Cleaning & Sanitization",
+                "text": "Intensive one-time or seasonal deep cleans that target hidden dirt, grime, and bacteria in every nook and cranny, ideal for move-outs, post-construction, or allergy relief.",
+                "image": "images/cleaner_using_steam_cleaner_on_cd6f58a9c789d76297cd1b25d51f2.webp"
+            }
+        ],
+        "why_us": [
+            {
+                "title": "Deep Kitchen Degreasing",
+                "text": "Our specialized kitchen cleaning removes stubborn grease and grime from ovens, stovetops, and range hoods, restoring hygiene and shine while eliminating harmful bacteria.",
+                "image": "images/professional_cleaner_in_gloves_4b3ef4173d0058a8bbb10722c6e73.webp"
+            },
+            {
+                "title": "Eco-Friendly Bathroom Sanitization",
+                "text": "Using hospital-grade disinfectants and green alternatives, we eliminate soap scum, mold, and pathogens from tiles, grout, and fixtures, leaving bathrooms fresh and safe for your family.",
+                "image": "images/cleaner_spraying_eco_friendly_e7f4284a3ab14c3e007676335043d2.webp"
+            },
+            {
+                "title": "Allergen-Free Floor Care",
+                "text": "From hardwood polishing to carpet deep extraction, we remove dust mites, pet dander, and allergens, improving indoor air quality and extending the life of your floors.",
+                "image": "images/professional_floor_cleaning_ma_2a0688e0db5ecc7448cbc0246212e.webp"
+            }
+        ]
+    }
+}

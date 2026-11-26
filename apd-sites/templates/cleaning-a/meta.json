@@ -1,0 +1,186 @@
+{
+    "id": "cleaning-a",
+    "name": "Bright & Tidy Cleaning",
+    "example": false,
+    "family": "cleaning",
+    "trades": [
+        "cleaner",
+        "carpet-cleaning",
+        "window-cleaning"
+    ],
+    "thumbnail": "images/professional_cleaning_team_in_56f5dc525794a6e89cfe6147e807d6.webp",
+    "fonts": [
+        "Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900"
+    ],
+    "colors": {
+        "bg": "#eeeee6",
+        "accent": "#c8a138",
+        "accent2": "#907428",
+        "muted": "#5a6b78",
+        "font": "Poppins, sans-serif, system-ui, sans-serif"
+    },
+    "fields": [
+        {
+            "key": "business_name",
+            "label": "Business name",
+            "type": "text",
+            "required": true,
+            "max": 80
+        },
+        {
+            "key": "phone",
+            "label": "Phone",
+            "type": "tel",
+            "required": true,
+            "max": 32
+        },
+        {
+            "key": "email",
+            "label": "Email",
+            "type": "email",
+            "required": false,
+            "max": 120
+        },
+        {
+            "key": "suburb",
+            "label": "Suburb",
+            "type": "text",
+            "required": false,
+            "max": 60
+        },
+        {
+            "key": "state",
+            "label": "State",
+            "type": "text",
+            "required": false,
+            "max": 20
+        },
+        {
+            "key": "service_area",
+            "label": "Service area",
+            "type": "text",
+            "required": false,
+            "max": 120
+        },
+        {
+            "key": "abn",
+            "label": "ABN",
+            "type": "text",
+            "required": false,
+            "max": 20
+        },
+        {
+            "key": "licence",
+            "label": "Licence",
+            "type": "text",
+            "required": false,
+            "max": 60
+        },
+        {
+            "key": "logo",
+            "label": "Logo URL",
+            "type": "url",
+            "required": false,
+            "max": 240
+        },
+        {
+            "key": "hero_heading",
+            "label": "Headline",
+            "type": "text",
+            "required": false,
+            "max": 120
+        },
+        {
+            "key": "hero_sub",
+            "label": "Sub-heading",
+            "type": "text",
+            "required": false,
+            "max": 200
+        },
+        {
+            "key": "about",
+            "label": "About",
+            "type": "textarea",
+            "required": false,
+            "max": 1200
+        },
+        {
+            "key": "cta_text",
+            "label": "Call to action",
+            "type": "text",
+            "required": false,
+            "max": 60
+        },
+        {
+            "key": "hours",
+            "label": "Hours",
+            "type": "text",
+            "required": false,
+            "max": 120
+        }
+    ],
+    "stock": {
+        "hero_image": "images/professional_cleaning_team_in_56f5dc525794a6e89cfe6147e807d6.webp",
+        "about_image": "images/friendly_professional_cleaning_7e92767781116ae0f70f3549d1415.webp",
+        "gallery": [
+            {
+                "image": "images/1795702270306_f3126162.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795702270333_5cb216e0.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795702270457_cfccf956.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795702270906_2347a8be.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795702270386_75747ea0.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795702270360_0afff93a.webp",
+                "caption": ""
+            }
+        ],
+        "services": [
+            {
+                "title": "Residential Cleaning",
+                "text": "Thorough home cleaning that gives you back your weekends. We sanitize, dust, and polish every room to perfection.",
+                "image": "images/professional_cleaner_vacuuming_4b056404c422423c3841810f277aa.webp"
+            },
+            {
+                "title": "Commercial Cleaning",
+                "text": "Immaculate office and retail spaces that impress clients and boost employee morale. We handle daily, weekly, or custom schedules.",
+                "image": "images/clean_office_cubicles_and_shin_f54f75f998d14f807a3b633769819.webp"
+            },
+            {
+                "title": "Deep Cleaning",
+                "text": "A intensive top-to-bottom clean that tackles built-up grime, stains, and hard-to-reach areas. Ideal for seasonal refresh or pre/post events.",
+                "image": "images/close_up_of_professional_clean_e5252f58d1ffe70c103811c94f816.webp"
+            }
+        ],
+        "why_us": [
+            {
+                "title": "Deep Cleaning Excellence",
+                "text": "Our deep cleaning service targets hidden dirt and grime, leaving every corner sanitized and refreshed. Perfect for move-in/move-out, post-construction, or seasonal refreshes.",
+                "image": "images/professional_cleaner_in_gloves_2aeae2f12ff42937d5d566d37da8c.webp"
+            },
+            {
+                "title": "Eco-Friendly Products",
+                "text": "We use non-toxic, environmentally safe cleaning solutions that are tough on dirt but gentle on your family and pets. Enjoy a fresh home without harsh chemicals.",
+                "image": "images/assortment_of_eco_friendly_cle_912824ff40128a00cd8c1e3257586.webp"
+            },
+            {
+                "title": "Customized Cleaning Plans",
+                "text": "Tell us your needs and we'll tailor a cleaning schedule that fits your lifestyle. Whether weekly, bi-weekly, or monthly, we adapt to you.",
+                "image": "images/planner_with_cleaning_checklis_f753900f0b089cc1378b5acf1363b.webp"
+            }
+        ]
+    }
+}

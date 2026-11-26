@@ -130,3 +130,48 @@ if (!function_exists('apd_site_clean_abn')) {
         return apd_site_truncate(trim($abn), 20);
     }
 }
+
+if (!function_exists('apd_site_abn_valid')) {
+    /**
+     * Australian Business Number check: 11 digits with a valid checksum.
+     */
+    function apd_site_abn_valid($value): bool
+    {
+        $digits = preg_replace('/\D/', '', apd_site_str($value));
+        if (11 !== strlen((string) $digits)) {
+            return false;
+        }
+        $weights = array(10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19);
+        $sum     = 0;
+        for ($i = 0; $i < 11; $i++) {
+            $digit = (int) $digits[$i];
+            if (0 === $i) {
+                $digit -= 1;
+            }
+            $sum += $digit * $weights[$i];
+        }
+        return 0 === $sum % 89;
+    }
+}
+
+if (!function_exists('apd_site_phone_valid')) {
+    /**
+     * Australian phone check: mobile, landline, 13/1300/1800 service numbers,
+     * with an optional +61 / 61 country code.
+     */
+    function apd_site_phone_valid($value): bool
+    {
+        $raw = trim(apd_site_str($value));
+        if ('' === $raw) {
+            return false;
+        }
+        $digits = (string) preg_replace('/\D/', '', $raw);
+        if (preg_match('/^61(\d{9})$/', $digits, $m)) {
+            $digits = '0' . $m[1];
+        }
+        if (preg_match('/^(?:13\d{4}|1300\d{6}|1800\d{6})$/', $digits)) {
+            return true;
+        }
+        return (bool) preg_match('/^0[2-9]\d{8}$/', $digits);
+    }
+}

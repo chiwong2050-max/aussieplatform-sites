@@ -52,6 +52,44 @@ if (!function_exists('apd_site_families')) {
     }
 }
 
+if (!function_exists('apd_site_design_families')) {
+    /**
+     * Design families used by the ClickSites importer (--family=…). These are
+     * narrower than apd_site_families(): a cleaning design only belongs to the
+     * cleaning trades, not every home service.
+     *
+     * @return array family slug => array( label, trades[] )
+     */
+    function apd_site_design_families(): array
+    {
+        return array(
+            'cleaning'   => array(
+                'label'  => 'Cleaning',
+                'trades' => array('cleaner', 'carpet-cleaning', 'window-cleaning'),
+            ),
+            'electrical' => array(
+                'label'  => 'Electrical',
+                'trades' => array('electrician', 'air-conditioning', 'solar'),
+            ),
+            'plumbing'   => array(
+                'label'  => 'Plumbing & gas',
+                'trades' => array('plumber', 'gasfitter'),
+            ),
+        );
+    }
+}
+
+if (!function_exists('apd_site_design_family_trades')) {
+    /**
+     * Trade slugs for a design family, or an empty array when unknown.
+     */
+    function apd_site_design_family_trades(string $family): array
+    {
+        $families = apd_site_design_families();
+        return isset($families[$family]['trades']) ? $families[$family]['trades'] : array();
+    }
+}
+
 if (!function_exists('apd_site_trade_family_map')) {
     /**
      * Flat map of trade slug => family slug.

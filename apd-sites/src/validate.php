@@ -36,6 +36,20 @@ if (!function_exists('apd_site_validate')) {
                 continue;
             }
 
+            if ('' !== $text && 'email' === (string) ($field['type'] ?? '')) {
+                if (function_exists('apd_site_clean_email') && '' === apd_site_clean_email($text)) {
+                    $errors[$key] = 'Please enter a valid email address.';
+                }
+            }
+
+            if ('' !== $text && 'abn' === $key && function_exists('apd_site_abn_valid') && !apd_site_abn_valid($text)) {
+                $errors[$key] = 'Please enter a valid 11-digit ABN.';
+            }
+
+            if ('' !== $text && 'phone' === $key && function_exists('apd_site_phone_valid') && !apd_site_phone_valid($text)) {
+                $errors[$key] = 'Please enter a valid Australian phone number.';
+            }
+
             if ($max > 0 && '' !== $text) {
                 $len = function_exists('mb_strlen') ? mb_strlen($text) : strlen($text);
                 if ($len > $max) {

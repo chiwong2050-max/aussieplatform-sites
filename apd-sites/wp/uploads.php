@@ -3,13 +3,29 @@
  * Photo uploads for tradie mini-websites.
  *
  * Photos come through the WordPress media library. Only jpg, png and webp are
- * accepted, capped at 5 MB each, and EXIF metadata is stripped by re-encoding.
+ * accepted, capped at 5 MB each and 8 files per site. Each photo is resized to
+ * a maximum of 1600px wide, re-encoded (which strips EXIF) and saved as WebP
+ * when the server supports it.
  */
 
 if (!function_exists('apd_sites_max_upload_bytes')) {
     function apd_sites_max_upload_bytes(): int
     {
         return 5 * 1024 * 1024;
+    }
+}
+
+if (!function_exists('apd_sites_max_photos')) {
+    function apd_sites_max_photos(): int
+    {
+        return 8;
+    }
+}
+
+if (!function_exists('apd_sites_photo_max_width')) {
+    function apd_sites_photo_max_width(): int
+    {
+        return 1600;
     }
 }
 
@@ -24,21 +40,43 @@ if (!function_exists('apd_sites_allowed_mimes')) {
     }
 }
 
-if (!function_exists('apd_sites_strip_exif')) {
+if (!function_exists('apd_sites_process_photo')) {
     /**
-     * Re-encode an image in place, which drops EXIF and other metadata.
+     * Resize to the max width, re-encode (drops EXIF) and convert to WebP when
+     * the server supports it.
+     *
+     * @return string Path to the final file (may differ in extension).
      */
-    function apd_sites_strip_exif(string $path): void
+    function apd_sites_process_photo(string $path): string
     {
         if (!function_exists('wp_get_image_editor')) {
-            return;
+            return $path;
         }
         $editor = wp_get_image_editor($path);
         if (is_wp_error($editor)) {
-            return;
+            return $path;
         }
-        $editor->set_quality(85);
-        $editor->save($path);
+
+        $size = $editor->get_size();
+        if (is_array($size) && !empty($size['width']) && (int) $size['width'] > apd_sites_photo_max_width()) {
+            $editor->resize(apd_sites_photo_max_width(), null, false);
+        }
+        $editor->set_quality(82);
+
+        $target = $path;
+        if (method_exists($editor, 'set_mime_type') && $editor->supports_mime_type('image/webp')) {
+            $editor->set_mime_type('image/webp');
+            $target = preg_replace('/\.[^.]+$/', '', $path) . '.webp';
+        }
+
+        $saved = $editor->save($target);
+        if (is_wp_error($saved) || empty($saved['path'])) {
+            return $path;
+        }
+        if ((string) $saved['path'] !== $path && is_file($path)) {
+            @unlink($path);
+        }
+        return (string) $saved['path'];
     }
 }
 
@@ -70,6 +108,12 @@ if (!function_exists('apd_sites_handle_photos')) {
         $files   = $_FILES[$field];
         $count   = is_array($files['name']) ? count($files['name']) : 1;
         $allowed = apd_sites_allowed_mimes();
+        $max     = apd_sites_max_photos();
+
+        if ($count > $max) {
+            $errors[] = sprintf('You can upload up to %d photos.', $max);
+            $count    = $max;
+        }
 
         for ($i = 0; $i < $count; $i++) {
             $name = is_array($files['name']) ? $files['name'][$i] : $files['name'];
@@ -107,17 +151,20 @@ if (!function_exists('apd_sites_handle_photos')) {
                 continue;
             }
 
-            apd_sites_strip_exif($moved['file']);
+            // Resize, re-encode (strips EXIF) and convert to WebP when possible.
+            $final = apd_sites_process_photo($moved['file']);
+            $final_check = wp_check_filetype($final, $allowed);
+            $mime = !empty($final_check['type']) ? $final_check['type'] : $check['type'];
 
             $attachment_id = wp_insert_attachment(
                 array(
-                    'post_mime_type' => $check['type'],
-                    'post_title'     => preg_replace('/\.[^.]+$/', '', basename($moved['file'])),
+                    'post_mime_type' => $mime,
+                    'post_title'     => preg_replace('/\.[^.]+$/', '', basename($final)),
                     'post_content'   => '',
                     'post_status'    => 'inherit',
                     'post_parent'    => $listing_id,
                 ),
-                $moved['file'],
+                $final,
                 $listing_id
             );
             if (is_wp_error($attachment_id) || !$attachment_id) {
@@ -125,7 +172,7 @@ if (!function_exists('apd_sites_handle_photos')) {
                 continue;
             }
 
-            $meta = wp_generate_attachment_metadata($attachment_id, $moved['file']);
+            $meta = wp_generate_attachment_metadata($attachment_id, $final);
             wp_update_attachment_metadata($attachment_id, $meta);
 
             $url = wp_get_attachment_url($attachment_id);

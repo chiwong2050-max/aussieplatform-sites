@@ -1,11 +1,38 @@
 <?php
 /**
- * ClickSites HTML importer. Pure PHP, no WordPress dependency.
+ * ClickSites importer. Pure PHP, no WordPress dependency.
  *
- * Turns an exported ClickSites HTML folder into the plugin's template format:
- * strips unsafe and third-party markup, keeps the layout and CSS, copies local
- * images and converts obvious sample text into {{field}} placeholders.
+ * ClickSites designs are Next.js exports: the real content lives inside the
+ * __NEXT_DATA__ JSON rather than the rendered DOM. When that payload is present
+ * the importer rebuilds the page from it (see src/clicksites.php) so no demo
+ * copy, ClickSites branding, tracker or made-up claim survives. Plain HTML
+ * exports still go through the older strip-and-placeholder pipeline.
  */
+
+if (!function_exists('apd_site_canonical_fields')) {
+    /**
+     * The placeholder fields the builder and the imported templates use.
+     */
+    function apd_site_canonical_fields(): array
+    {
+        return array(
+            array('key' => 'business_name', 'label' => 'Business name',  'type' => 'text',     'required' => true,  'max' => 80),
+            array('key' => 'phone',         'label' => 'Phone',          'type' => 'tel',      'required' => true,  'max' => 32),
+            array('key' => 'email',         'label' => 'Email',          'type' => 'email',    'required' => false, 'max' => 120),
+            array('key' => 'suburb',        'label' => 'Suburb',         'type' => 'text',     'required' => false, 'max' => 60),
+            array('key' => 'state',         'label' => 'State',          'type' => 'text',     'required' => false, 'max' => 20),
+            array('key' => 'service_area',  'label' => 'Service area',   'type' => 'text',     'required' => false, 'max' => 120),
+            array('key' => 'abn',           'label' => 'ABN',            'type' => 'text',     'required' => false, 'max' => 20),
+            array('key' => 'licence',       'label' => 'Licence',        'type' => 'text',     'required' => false, 'max' => 60),
+            array('key' => 'logo',          'label' => 'Logo URL',       'type' => 'url',      'required' => false, 'max' => 240),
+            array('key' => 'hero_heading',  'label' => 'Headline',       'type' => 'text',     'required' => false, 'max' => 120),
+            array('key' => 'hero_sub',      'label' => 'Sub-heading',    'type' => 'text',     'required' => false, 'max' => 200),
+            array('key' => 'about',         'label' => 'About',          'type' => 'textarea', 'required' => false, 'max' => 1200),
+            array('key' => 'cta_text',      'label' => 'Call to action', 'type' => 'text',     'required' => false, 'max' => 60),
+            array('key' => 'hours',         'label' => 'Hours',          'type' => 'text',     'required' => false, 'max' => 120),
+        );
+    }
+}
 
 if (!function_exists('apd_site_known_fields')) {
     /**
@@ -14,10 +41,16 @@ if (!function_exists('apd_site_known_fields')) {
      */
     function apd_site_known_fields(): array
     {
-        return array(
-            'name', 'phone', 'email', 'website', 'suburb', 'abn', 'licence', 'hours',
-            'description', 'services', 'title', 'price', 'this',
-        );
+        $keys = array();
+        foreach (apd_site_canonical_fields() as $field) {
+            $keys[] = (string) $field['key'];
+        }
+        // Legacy names plus the keys used inside {{#each}} rows.
+        return array_values(array_unique(array_merge($keys, array(
+            'name', 'description', 'website', 'title', 'price', 'this',
+            'services', 'why_us', 'gallery', 'testimonials',
+            'text', 'image', 'caption', 'author', 'hero_image', 'about_image',
+        ))));
     }
 }
 
@@ -27,17 +60,7 @@ if (!function_exists('apd_site_default_fields')) {
      */
     function apd_site_default_fields(): array
     {
-        return array(
-            array('key' => 'name',        'label' => 'Business name', 'type' => 'text',     'required' => true,  'max' => 80),
-            array('key' => 'phone',       'label' => 'Phone',         'type' => 'tel',      'required' => true,  'max' => 32),
-            array('key' => 'email',       'label' => 'Email',         'type' => 'email',    'required' => false, 'max' => 120),
-            array('key' => 'website',     'label' => 'Website',       'type' => 'url',      'required' => false, 'max' => 160),
-            array('key' => 'suburb',      'label' => 'Suburb',        'type' => 'text',     'required' => false, 'max' => 60),
-            array('key' => 'hours',       'label' => 'Hours',         'type' => 'text',     'required' => false, 'max' => 120),
-            array('key' => 'abn',         'label' => 'ABN',           'type' => 'text',     'required' => false, 'max' => 20),
-            array('key' => 'licence',     'label' => 'Licence',       'type' => 'text',     'required' => false, 'max' => 40),
-            array('key' => 'description', 'label' => 'Description',   'type' => 'textarea', 'required' => false, 'max' => 600),
-        );
+        return apd_site_canonical_fields();
     }
 }
 
@@ -105,11 +128,11 @@ if (!function_exists('apd_site_import_apply_placeholders')) {
     function apd_site_import_apply_placeholders(string $html, array &$removed): string
     {
         // Obvious sample text first.
-        $html = (string) preg_replace('/\b(?:your business name|business name|company name)\b/i', '{{name}}', $html);
+        $html = (string) preg_replace('/\b(?:your business name|business name|company name)\b/i', '{{business_name}}', $html);
         $removed['placeholders'][] = 'generic business name text';
 
-        // Lorem ipsum blocks become the description field.
-        $html = (string) preg_replace('/(?:lorem ipsum)[^<]*/i', '{{description}}', $html);
+        // Lorem ipsum blocks become the about field.
+        $html = (string) preg_replace('/(?:lorem ipsum)[^<]*/i', '{{about}}', $html);
 
         // Emails.
         $html = (string) preg_replace('/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/', '{{email}}', $html);
@@ -124,7 +147,7 @@ if (!function_exists('apd_site_import_apply_placeholders')) {
                 if (false !== strpos($m[2], '{{')) {
                     return $m[0];
                 }
-                return '<h1' . $m[1] . '>{{name}}</h1>';
+                return '<h1' . $m[1] . '>{{business_name}}</h1>';
             },
             $html
         );
@@ -176,9 +199,278 @@ if (!function_exists('apd_site_import_images')) {
     }
 }
 
+/* ------------------------------------------------------------------------- *
+ * Image handling (stock copies, WebP, thumbnails)
+ * ------------------------------------------------------------------------- */
+
+if (!function_exists('apd_site_import_gd_convert')) {
+    /**
+     * Resize and re-encode one image file to WebP with GD.
+     */
+    function apd_site_import_gd_convert(string $src, string $dest, int $max_w, int $quality): bool
+    {
+        if (!function_exists('imagecreatetruecolor') || !function_exists('imagewebp')) {
+            return false;
+        }
+        $info = @getimagesize($src);
+        if (!$info || empty($info[0]) || empty($info[1])) {
+            return false;
+        }
+        $mime = isset($info['mime']) ? strtolower((string) $info['mime']) : '';
+        $make = null;
+        switch ($mime) {
+            case 'image/jpeg':
+                $make = function_exists('imagecreatefromjpeg') ? 'imagecreatefromjpeg' : null;
+                break;
+            case 'image/png':
+                $make = function_exists('imagecreatefrompng') ? 'imagecreatefrompng' : null;
+                break;
+            case 'image/webp':
+                $make = function_exists('imagecreatefromwebp') ? 'imagecreatefromwebp' : null;
+                break;
+            case 'image/gif':
+                $make = function_exists('imagecreatefromgif') ? 'imagecreatefromgif' : null;
+                break;
+        }
+        if (!$make) {
+            return false;
+        }
+        $img = @$make($src);
+        if (!$img) {
+            return false;
+        }
+
+        $w = (int) $info[0];
+        $h = (int) $info[1];
+        $scale = ($max_w > 0 && $w > $max_w) ? ($max_w / $w) : 1.0;
+        $nw = (int) max(1, round($w * $scale));
+        $nh = (int) max(1, round($h * $scale));
+
+        $dst = imagecreatetruecolor($nw, $nh);
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+        $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+        imagefilledrectangle($dst, 0, 0, $nw, $nh, $transparent);
+        imagealphablending($dst, true);
+        imagecopyresampled($dst, $img, 0, 0, 0, 0, $nw, $nh, $w, $h);
+
+        $ok = @imagewebp($dst, $dest, max(1, min(100, $quality)));
+        imagedestroy($img);
+        imagedestroy($dst);
+        return (bool) $ok;
+    }
+}
+
+if (!function_exists('apd_site_import_media_copy')) {
+    /**
+     * Copy one image into $dest_dir, converting to WebP when GD allows.
+     *
+     * @return string|null The saved file name (not the folder).
+     */
+    function apd_site_import_media_copy(string $src, string $dest_dir, int $max_w, int $quality)
+    {
+        if (!is_file($src)) {
+            return null;
+        }
+        if (!is_dir($dest_dir)) {
+            @mkdir($dest_dir, 0775, true);
+        }
+        $stem = preg_replace('/[^A-Za-z0-9._-]+/', '-', (string) pathinfo($src, PATHINFO_FILENAME));
+        $stem = trim((string) $stem, '-');
+        if ('' === $stem) {
+            $stem = 'image';
+        }
+        $stem = substr($stem, 0, 60);
+
+        $webp = $dest_dir . '/' . $stem . '.webp';
+        if (apd_site_import_gd_convert($src, $webp, $max_w, $quality)) {
+            return $stem . '.webp';
+        }
+
+        $ext  = strtolower((string) pathinfo($src, PATHINFO_EXTENSION));
+        $ext  = preg_match('/^[a-z0-9]{2,4}$/', $ext) ? $ext : 'jpg';
+        $copy = $dest_dir . '/' . $stem . '.' . $ext;
+        return @copy($src, $copy) ? $stem . '.' . $ext : null;
+    }
+}
+
+/* ------------------------------------------------------------------------- *
+ * Next.js / ClickSites rebuild
+ * ------------------------------------------------------------------------- */
+
+if (!function_exists('apd_site_import_branding_scan')) {
+    /**
+     * Record the third-party pieces the rebuild deliberately drops.
+     */
+    function apd_site_import_branding_scan(string $html, array &$report): void
+    {
+        if (preg_match_all('/<script\b/i', $html, $m) && $m[0]) {
+            $report['removed'][] = count($m[0]) . ' Next.js / ClickSites script tag(s)';
+        }
+        if (preg_match_all('/clicksites/i', $html, $m2) && $m2[0]) {
+            $report['removed'][] = count($m2[0]) . ' ClickSites branding reference(s)';
+        }
+        if (preg_match_all('#googletagmanager|google-analytics|gtag\(|hotjar|facebook\.net|mixpanel|segment\.|doubleclick#i', $html, $m3) && $m3[0]) {
+            $report['removed'][] = count($m3[0]) . ' tracker reference(s)';
+        }
+        if (preg_match_all('/<form\b/i', $html, $m4) && $m4[0]) {
+            $report['removed'][] = count($m4[0]) . ' ClickSites form(s)';
+        }
+    }
+}
+
+if (!function_exists('apd_site_import_resolve_trades')) {
+    /**
+     * Trades for a template: design family first, then the broad family, else '*'.
+     */
+    function apd_site_import_resolve_trades(array $opts): array
+    {
+        if (isset($opts['trades']) && is_array($opts['trades']) && $opts['trades']) {
+            return array_values($opts['trades']);
+        }
+        $family = isset($opts['family']) ? (string) $opts['family'] : '';
+        if ('' !== $family) {
+            if (function_exists('apd_site_design_family_trades')) {
+                $trades = apd_site_design_family_trades($family);
+                if ($trades) {
+                    return $trades;
+                }
+            }
+            if (function_exists('apd_site_family_trades')) {
+                $trades = apd_site_family_trades($family);
+                if ($trades) {
+                    return $trades;
+                }
+            }
+        }
+        return array('*');
+    }
+}
+
+if (!function_exists('apd_site_import_nextjs')) {
+    /**
+     * Rebuild a next.js export into the plugin's template format.
+     *
+     * @return array The import report.
+     */
+    function apd_site_import_nextjs(array $nd, string $dest_dir, array $opts, array $report): array
+    {
+        $build  = apd_site_cs_build($nd);
+        $id     = isset($opts['id']) && '' !== $opts['id'] ? (string) $opts['id'] : basename($dest_dir);
+        $name   = isset($opts['name']) && '' !== $opts['name'] ? (string) $opts['name'] : ucwords(str_replace('-', ' ', $id));
+        $family = isset($opts['family']) ? (string) $opts['family'] : '';
+        $trades = apd_site_import_resolve_trades($opts);
+
+        apd_site_import_branding_scan((string) $nd['rendered'], $report);
+        foreach ($build['removed'] as $item) {
+            $report['removed'][] = $item;
+        }
+        foreach ($build['claims'] as $claim) {
+            $report['removed'][] = 'made-up claim: "' . $claim . '"';
+        }
+
+        if (!is_dir($dest_dir)) {
+            @mkdir($dest_dir, 0775, true);
+        }
+        $images_dir = rtrim($dest_dir, '/\\') . '/images';
+        $map        = array();
+        $copy       = static function ($rel) use ($images_dir, &$map, &$report) {
+            $rel = (string) $rel;
+            if ('' === $rel) {
+                return '';
+            }
+            if (preg_match('#^(?:https?:)?//#i', $rel)) {
+                return ''; // external stock images are dropped, not hot-linked
+            }
+            if (isset($map[$rel])) {
+                return 'images/' . $map[$rel];
+            }
+            $src  = $GLOBALS['apd_site_import_src'] . '/' . ltrim($rel, '/');
+            $file = apd_site_import_media_copy($src, $images_dir, 1600, 80);
+            if (null === $file) {
+                $report['notes'][] = 'Missing stock image: ' . $rel;
+                return '';
+            }
+            $map[$rel] = $file;
+            $report['images'][] = 'images/' . $file;
+            return 'images/' . $file;
+        };
+
+        $stock = is_array($build['stock']) ? $build['stock'] : array();
+        $stock['hero_image']  = $copy($stock['hero_image'] ?? '');
+        $stock['about_image'] = $copy($stock['about_image'] ?? '');
+
+        $gallery = array();
+        foreach (($stock['gallery'] ?? array()) as $g) {
+            $img = $copy(is_array($g) ? ($g['image'] ?? '') : '');
+            if ('' !== $img) {
+                $gallery[] = array('image' => $img, 'caption' => '');
+            }
+        }
+        $stock['gallery'] = $gallery;
+
+        foreach (array('services', 'why_us') as $field) {
+            $rows = array();
+            foreach (($stock[$field] ?? array()) as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $row['image'] = $copy($row['image'] ?? '');
+                $rows[]       = $row;
+            }
+            $stock[$field] = $rows;
+        }
+
+        // Thumbnail: hero first, else the first gallery image.
+        $thumb_src = '';
+        if ('' !== ($stock['hero_image'] ?? '')) {
+            $thumb_src = $images_dir . '/' . basename($stock['hero_image']);
+        } elseif ($gallery) {
+            $thumb_src = $images_dir . '/' . basename($gallery[0]['image']);
+        }
+        $thumbnail = '';
+        if ('' !== $thumb_src && is_file($thumb_src)) {
+            $thumb_file = apd_site_import_media_copy($thumb_src, $images_dir, 640, 78);
+            if (null !== $thumb_file) {
+                $thumbnail = 'images/' . $thumb_file;
+            }
+        }
+
+        $meta = array(
+            'id'        => $id,
+            'name'      => $name,
+            'example'   => false,
+            'family'    => $family,
+            'trades'    => $trades,
+            'thumbnail' => $thumbnail,
+            'fonts'     => $build['fonts'],
+            'colors'    => $build['palette'],
+            'fields'    => apd_site_canonical_fields(),
+            'stock'     => $stock,
+        );
+
+        file_put_contents(rtrim($dest_dir, '/\\') . '/template.html', trim($build['template_html']) . "\n");
+        file_put_contents(rtrim($dest_dir, '/\\') . '/style.css', trim($build['style_css']) . "\n");
+        file_put_contents(
+            rtrim($dest_dir, '/\\') . '/meta.json',
+            json_encode($meta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
+        );
+
+        $report['placeholders'] = apd_site_import_token_report($build['template_html']);
+        $report['notes'][]      = 'Rebuilt from __NEXT_DATA__; rendered HTML used to detect sections.';
+        $report['notes'][]      = 'Kept Google Fonts only: ' . ($build['fonts'] ? implode(', ', $build['fonts']) : 'none');
+
+        return $report;
+    }
+}
+
+/* ------------------------------------------------------------------------- *
+ * Entry point
+ * ------------------------------------------------------------------------- */
+
 if (!function_exists('apd_site_import_clicksites')) {
     /**
-     * Import a ClickSites HTML folder into the template format.
+     * Import a ClickSites export into the template format.
      *
      * @param string $src_dir  Folder holding the exported site.
      * @param string $dest_dir Destination templates/<id> folder.
@@ -194,6 +486,7 @@ if (!function_exists('apd_site_import_clicksites')) {
             'images'       => array(),
             'placeholders' => array('known' => array(), 'unknown' => array()),
             'notes'        => array(),
+            'mode'         => 'html',
         );
 
         if (!is_dir($src_dir)) {
@@ -207,7 +500,22 @@ if (!function_exists('apd_site_import_clicksites')) {
         }
 
         $html = (string) file_get_contents($index);
-        $css  = '';
+
+        // Next.js export: rebuild from the JSON payload.
+        if (function_exists('apd_site_cs_next_data')) {
+            $nd = apd_site_cs_next_data($html);
+            if (is_array($nd) && !empty($nd['content'])) {
+                $report['mode'] = 'nextjs';
+
+                // The stock copy helper reads this path.
+                $GLOBALS['apd_site_import_src'] = rtrim($src_dir, '/\\');
+                $result = apd_site_import_nextjs($nd, $dest_dir, $opts, $report);
+                unset($GLOBALS['apd_site_import_src']);
+                return $result;
+            }
+        }
+
+        $css = '';
 
         // 1. Scripts.
         $html = (string) preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $html, -1, $c1);
@@ -254,6 +562,7 @@ if (!function_exists('apd_site_import_clicksites')) {
         );
 
         // 4. External stylesheet links; keep local ones for CSS collection.
+        //    Google Fonts are the only external font source kept.
         $html = (string) preg_replace_callback(
             '/<link\b[^>]*>/i',
             static function ($m) use (&$report, $src_dir, &$css) {
@@ -261,6 +570,9 @@ if (!function_exists('apd_site_import_clicksites')) {
                     return $m[0];
                 }
                 $href = $h[2];
+                if (preg_match('#fonts\.googleapis\.com|fonts\.gstatic\.com#i', $href)) {
+                    return $m[0];
+                }
                 if (apd_site_import_is_external($href)) {
                     $report['removed'][] = 'external stylesheet: ' . $href;
                     return '';
@@ -345,13 +657,7 @@ if (!function_exists('apd_site_import_clicksites')) {
         }
         $id     = isset($opts['id']) && '' !== $opts['id'] ? (string) $opts['id'] : basename($dest_dir);
         $name   = isset($opts['name']) && '' !== $opts['name'] ? (string) $opts['name'] : $id;
-        $trades = (isset($opts['trades']) && is_array($opts['trades']) && $opts['trades']) ? array_values($opts['trades']) : array('*');
-        if (!empty($opts['family']) && function_exists('apd_site_family_trades')) {
-            $family_trades = apd_site_family_trades((string) $opts['family']);
-            if ($family_trades) {
-                $trades = $family_trades;
-            }
-        }
+        $trades = apd_site_import_resolve_trades($opts);
 
         $meta = array(
             'id'      => $id,

@@ -19,6 +19,7 @@ $root = dirname(__DIR__);
 require_once $root . '/src/trade-families.php';
 require_once $root . '/src/sanitise.php';
 require_once $root . '/src/render.php';
+require_once $root . '/src/clicksites.php';
 require_once $root . '/src/importer.php';
 
 /**
@@ -96,7 +97,7 @@ $destination = $root . '/templates/' . $template_id;
 $report = apd_site_import_clicksites($source, $destination, array(
     'id'     => $template_id,
     'name'   => $name,
-    'trades' => $trades ? $trades : array('*'),
+    'trades' => $trades, // empty: resolved from --family by the importer
     'family' => $family,
 ));
 

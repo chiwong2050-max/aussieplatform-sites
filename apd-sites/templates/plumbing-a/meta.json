@@ -1,0 +1,185 @@
+{
+    "id": "plumbing-a",
+    "name": "Pipeworks Plumbing",
+    "example": false,
+    "family": "plumbing",
+    "trades": [
+        "plumber",
+        "gasfitter"
+    ],
+    "thumbnail": "images/professional_plumber_in_clean_13ff4377ba901861e2eb5505b57a49.webp",
+    "fonts": [
+        "Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900"
+    ],
+    "colors": {
+        "bg": "#eeeee6",
+        "accent": "#c8a138",
+        "accent2": "#907428",
+        "muted": "#5a6b78",
+        "font": "Poppins, sans-serif, system-ui, sans-serif"
+    },
+    "fields": [
+        {
+            "key": "business_name",
+            "label": "Business name",
+            "type": "text",
+            "required": true,
+            "max": 80
+        },
+        {
+            "key": "phone",
+            "label": "Phone",
+            "type": "tel",
+            "required": true,
+            "max": 32
+        },
+        {
+            "key": "email",
+            "label": "Email",
+            "type": "email",
+            "required": false,
+            "max": 120
+        },
+        {
+            "key": "suburb",
+            "label": "Suburb",
+            "type": "text",
+            "required": false,
+            "max": 60
+        },
+        {
+            "key": "state",
+            "label": "State",
+            "type": "text",
+            "required": false,
+            "max": 20
+        },
+        {
+            "key": "service_area",
+            "label": "Service area",
+            "type": "text",
+            "required": false,
+            "max": 120
+        },
+        {
+            "key": "abn",
+            "label": "ABN",
+            "type": "text",
+            "required": false,
+            "max": 20
+        },
+        {
+            "key": "licence",
+            "label": "Licence",
+            "type": "text",
+            "required": false,
+            "max": 60
+        },
+        {
+            "key": "logo",
+            "label": "Logo URL",
+            "type": "url",
+            "required": false,
+            "max": 240
+        },
+        {
+            "key": "hero_heading",
+            "label": "Headline",
+            "type": "text",
+            "required": false,
+            "max": 120
+        },
+        {
+            "key": "hero_sub",
+            "label": "Sub-heading",
+            "type": "text",
+            "required": false,
+            "max": 200
+        },
+        {
+            "key": "about",
+            "label": "About",
+            "type": "textarea",
+            "required": false,
+            "max": 1200
+        },
+        {
+            "key": "cta_text",
+            "label": "Call to action",
+            "type": "text",
+            "required": false,
+            "max": 60
+        },
+        {
+            "key": "hours",
+            "label": "Hours",
+            "type": "text",
+            "required": false,
+            "max": 120
+        }
+    ],
+    "stock": {
+        "hero_image": "images/professional_plumber_in_clean_13ff4377ba901861e2eb5505b57a49.webp",
+        "about_image": "images/friendly_professional_plumber_1cedcf6cfd2b1d02d2c7203b7c23f9.webp",
+        "gallery": [
+            {
+                "image": "images/1795704301118_70e868f2.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795704302282_60705f52.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795704300419_0eb62426.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795704301384_da6b0c73.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795704300992_44d38961.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795704300833_1c5259e7.webp",
+                "caption": ""
+            }
+        ],
+        "services": [
+            {
+                "title": "Emergency Leak Repair",
+                "text": "Fast response to stop water damage and restore your plumbing. We locate the source, fix it permanently, and dry affected areas. Available 24/7 for burst pipes, slab leaks, and fixture failures.",
+                "image": "images/plumber_fixing_leaking_pipe_un_92bad06bba11066418727b01485e3.webp"
+            },
+            {
+                "title": "Drain Cleaning and Unclogging",
+                "text": "Powerful hydro jetting and snaking to clear stubborn blockages in sinks, toilets, and main lines. We remove grease, roots, and debris without damaging pipes, restoring fast drainage and preventing future backups.",
+                "image": "images/professional_drain_cleaning_ma_9d652066f645410738c11e0cd24d7.webp"
+            },
+            {
+                "title": "Water Heater Installation & Repair",
+                "text": "Expert installation of tank and tankless water heaters, plus repairs and maintenance to extend unit life. We help you choose the right size and energy source for your home, ensuring reliable hot water and lower bills.",
+                "image": "images/new_energy_efficient_tankless_e2ae52204ffe95fe784b1cb4129af5.webp"
+            }
+        ],
+        "why_us": [
+            {
+                "title": "Prevent Costly Water Leaks",
+                "text": "Undetected leaks can waste thousands of gallons and damage your foundation. Our advanced leak detection uses thermal imaging and acoustic sensors to locate hidden leaks without tearing up floors. Schedule an annual inspection to catch issues before they become emergencies and keep your water bill under control.",
+                "image": "images/plumber_using_thermal_imaging_aa96e88795e3ed6544f20a9b831d38.webp"
+            },
+            {
+                "title": "Upgrade to Efficient Fixtures",
+                "text": "Replacing old toilets, faucets, and showerheads with WaterSense-certified models can cut water usage by 30% and reduce utility bills. Our team helps you choose the right styles and handles installation with minimal disruption, ensuring proper seals and flow rates for peak performance and comfort.",
+                "image": "images/modern_bathroom_with_new_water_8d67b225bd2765bb4460eb3af9791.webp"
+            },
+            {
+                "title": "Maintain Your Water Heater",
+                "text": "Flushing your water heater annually removes sediment that causes corrosion and inefficiency. We inspect the anode rod, pressure relief valve, and thermostat, extending the unit's lifespan by years. Signs you need service include rumbling noises, rusty water, or inconsistent hot water\u2014don't wait for a cold shower.",
+                "image": "images/plumber_performing_maintenance_7fe4c841262cb9fe877d567620a1e.webp"
+            }
+        ]
+    }
+}

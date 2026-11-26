@@ -1,0 +1,186 @@
+{
+    "id": "electrical-a",
+    "name": "Sparks Electrical",
+    "example": false,
+    "family": "electrical",
+    "trades": [
+        "electrician",
+        "air-conditioning",
+        "solar"
+    ],
+    "thumbnail": "images/professional_electrician_in_sa_72aa777c4d77aed4207be4340f5c8.webp",
+    "fonts": [
+        "Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900"
+    ],
+    "colors": {
+        "bg": "#eeeee6",
+        "accent": "#c8a138",
+        "accent2": "#907428",
+        "muted": "#5a6b78",
+        "font": "Poppins, sans-serif, system-ui, sans-serif"
+    },
+    "fields": [
+        {
+            "key": "business_name",
+            "label": "Business name",
+            "type": "text",
+            "required": true,
+            "max": 80
+        },
+        {
+            "key": "phone",
+            "label": "Phone",
+            "type": "tel",
+            "required": true,
+            "max": 32
+        },
+        {
+            "key": "email",
+            "label": "Email",
+            "type": "email",
+            "required": false,
+            "max": 120
+        },
+        {
+            "key": "suburb",
+            "label": "Suburb",
+            "type": "text",
+            "required": false,
+            "max": 60
+        },
+        {
+            "key": "state",
+            "label": "State",
+            "type": "text",
+            "required": false,
+            "max": 20
+        },
+        {
+            "key": "service_area",
+            "label": "Service area",
+            "type": "text",
+            "required": false,
+            "max": 120
+        },
+        {
+            "key": "abn",
+            "label": "ABN",
+            "type": "text",
+            "required": false,
+            "max": 20
+        },
+        {
+            "key": "licence",
+            "label": "Licence",
+            "type": "text",
+            "required": false,
+            "max": 60
+        },
+        {
+            "key": "logo",
+            "label": "Logo URL",
+            "type": "url",
+            "required": false,
+            "max": 240
+        },
+        {
+            "key": "hero_heading",
+            "label": "Headline",
+            "type": "text",
+            "required": false,
+            "max": 120
+        },
+        {
+            "key": "hero_sub",
+            "label": "Sub-heading",
+            "type": "text",
+            "required": false,
+            "max": 200
+        },
+        {
+            "key": "about",
+            "label": "About",
+            "type": "textarea",
+            "required": false,
+            "max": 1200
+        },
+        {
+            "key": "cta_text",
+            "label": "Call to action",
+            "type": "text",
+            "required": false,
+            "max": 60
+        },
+        {
+            "key": "hours",
+            "label": "Hours",
+            "type": "text",
+            "required": false,
+            "max": 120
+        }
+    ],
+    "stock": {
+        "hero_image": "images/professional_electrician_in_sa_72aa777c4d77aed4207be4340f5c8.webp",
+        "about_image": "images/professional_team_of_electrici_39ecb00b6ec2dee672efad00e8ac9.webp",
+        "gallery": [
+            {
+                "image": "images/1795703644238_b416f5bb.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795703643016_8d5f9be3.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795703643344_b6779610.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795703643413_e458e53f.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795703643236_22ed58a0.webp",
+                "caption": ""
+            },
+            {
+                "image": "images/1795703643588_5ecb7608.webp",
+                "caption": ""
+            }
+        ],
+        "services": [
+            {
+                "title": "Residential Electrical Repairs",
+                "text": "From faulty switches to complete rewiring, our electricians diagnose and fix issues quickly. We ensure your home's electrical system is safe, reliable, and up to code, giving you peace of mind.",
+                "image": "images/electrician_repairing_a_light_0f45f051429df0b9790b074a197306.webp"
+            },
+            {
+                "title": "Lighting Design & Installation",
+                "text": "Transform your space with professional lighting. We design and install indoor and outdoor lighting solutions that enhance aesthetics, improve security, and reduce energy consumption.",
+                "image": "images/beautifully_lit_modern_living_7bc025d70e35d5d7eaa64e72e48922.webp"
+            },
+            {
+                "title": "Commercial & Industrial Services",
+                "text": "Keep your business powered with our commercial electrical expertise. We handle installations, maintenance, and upgrades, minimizing downtime and maximizing efficiency.",
+                "image": "images/industrial_electrician_working_eb3a828616776a1000a9e9dd96b1d.webp"
+            }
+        ],
+        "why_us": [
+            {
+                "title": "Why Professional Installation Matters",
+                "text": "Improper electrical work can lead to safety hazards and costly repairs. Our licensed electricians follow code, use quality materials, and ensure your installation is done safely and efficiently the first time, saving you money and giving you peace of mind.",
+                "image": "images/electrician_carefully_installi_4540eaf41aad34cdf4d3f675b19f4.webp"
+            },
+            {
+                "title": "Rapid Response for Emergency Repairs",
+                "text": "Electrical problems don't wait. Our 24/7 emergency services address issues like sparking outlets, tripped breakers, and power outages quickly, minimizing downtime and preventing further damage to your property.",
+                "image": "images/emergency_electrician_arriving_17e7b21c5e0d615161499f8f5996e.webp"
+            },
+            {
+                "title": "Upgrade Your Lighting for Efficiency",
+                "text": "Modern LED lighting can cut energy costs by up to 75%. We help you design and install energy-efficient lighting solutions that enhance your space, reduce your carbon footprint, and lower your monthly bills.",
+                "image": "images/before_and_after_comparison_of_e6662ebd27af7653add971bfca2ac.webp"
+            }
+        ]
+    }
+}

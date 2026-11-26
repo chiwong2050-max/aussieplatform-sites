@@ -1,6 +1,10 @@
 # Local PHP toolchain downloaded for tests
 .tools/
 
+# Raw ClickSites exports (large, machine specific). Re-fetch with
+# bin/fetch-clicksites.php then convert with bin/import-clicksites.php.
+import/
+
 # Test scratch directory
 apd-sites/tests/tmp/
 
