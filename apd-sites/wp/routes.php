@@ -4,7 +4,28 @@
  *
  * Owner flow:  /my-site/<listing_id>/
  * Public page: /site/<listing_id>-<slug>/
+ *
+ * The directory core (zz-apd-core.php) exposes a listing as a database row
+ * object: $l->id, $l->user_id, $l->name, $l->trades (comma separated),
+ * $l->suburb_id, $l->phone, $l->website, $l->email, $l->abn, $l->licence,
+ * $l->descr, $l->hours.
  */
+
+if (!function_exists('apd_esc')) {
+    /**
+     * Attribute escaper. The core only ships apd_e() for HTML text, so the
+     * plugin keeps its own attribute-safe helper.
+     *
+     * @param mixed $value
+     */
+    function apd_esc($value): string
+    {
+        if (function_exists('esc_attr')) {
+            return esc_attr((string) $value);
+        }
+        return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+}
 
 if (!function_exists('apd_sites_on')) {
     function apd_sites_on(): bool
@@ -86,10 +107,31 @@ if (!function_exists('apd_sites_rate_limit')) {
     }
 }
 
+if (!function_exists('apd_sites_listing_trades')) {
+    /**
+     * Trades for a listing row (comma separated string in the directory).
+     *
+     * @return string[]
+     */
+    function apd_sites_listing_trades(object $listing): array
+    {
+        $raw = isset($listing->trades) ? (string) $listing->trades : '';
+        $out = array();
+        foreach (explode(',', $raw) as $slug) {
+            $slug = trim($slug);
+            if ('' !== $slug) {
+                $out[] = $slug;
+            }
+        }
+        return $out;
+    }
+}
+
 if (!function_exists('apd_sites_insert_report')) {
     /**
      * Add a row to the existing directory reports queue so the site appears
-     * for review. Only columns that exist in the table are written.
+     * for review (the core admin queue lists reports where status='open').
+     * Only columns that exist in the table are written.
      */
     function apd_sites_insert_report(int $listing_id, int $user_id): int
     {
@@ -107,16 +149,22 @@ if (!function_exists('apd_sites_insert_report')) {
             return 0;
         }
 
+        $salt = function_exists('wp_salt') ? wp_salt() : '';
+        $ip   = md5((string) ($_SERVER['REMOTE_ADDR'] ?? '') . $salt);
         $now  = current_time('mysql');
-        $map  = array(
-            'listing_id' => $listing_id,
-            'post_id'    => $listing_id,
-            'user_id'    => $user_id,
-            'reason'     => 'Site review',
-            'type'       => 'Site review',
-            'status'     => 'pending',
-            'created'    => $now,
-            'created_at' => $now,
+
+        $map = array(
+            'listing_id'  => $listing_id,
+            'post_id'     => $listing_id,
+            'reporter_id' => $user_id,
+            'user_id'     => $user_id,
+            'reason'      => 'Site review',
+            'type'        => 'Site review',
+            'details'     => 'A tradie mini-website was submitted for review.',
+            'ip'          => $ip,
+            'status'      => 'open',
+            'created'     => $now,
+            'created_at'  => $now,
         );
         $data = array();
         $fmt  = array();
@@ -149,6 +197,9 @@ if (!function_exists('apd_sites_collect')) {
             $type  = isset($field['type']) ? (string) $field['type'] : 'text';
             $max   = isset($field['max']) ? (int) $field['max'] : 0;
             $value = array_key_exists($key, $src) ? $src[$key] : '';
+            if (function_exists('wp_unslash')) {
+                $value = wp_unslash($value);
+            }
 
             switch ($type) {
                 case 'email':
@@ -191,25 +242,39 @@ if (!function_exists('apd_sites_prefill')) {
     /**
      * Prefill values from real listing fields only.
      */
-    function apd_sites_prefill(array $listing): array
+    function apd_sites_prefill(object $listing): array
     {
-        $keys = array('name', 'phone', 'email', 'website', 'suburb', 'abn', 'licence', 'hours', 'description');
-        $out  = array();
-        foreach ($keys as $key) {
-            $out[$key] = isset($listing[$key]) ? (string) $listing[$key] : '';
+        $suburb = '';
+        if (function_exists('apd_sub') && isset($listing->suburb_id)) {
+            $sub = apd_sub((int) $listing->suburb_id);
+            if ($sub) {
+                $suburb = function_exists('apd_sub_label')
+                    ? (string) apd_sub_label($sub)
+                    : (string) ($sub->name ?? '');
+            }
         }
-        return $out;
+        return array(
+            'name'        => (string) ($listing->name ?? ''),
+            'phone'       => (string) ($listing->phone ?? ''),
+            'email'       => (string) ($listing->email ?? ''),
+            'website'     => (string) ($listing->website ?? ''),
+            'suburb'      => $suburb,
+            'abn'         => (string) ($listing->abn ?? ''),
+            'licence'     => (string) ($listing->licence ?? ''),
+            'hours'       => (string) ($listing->hours ?? ''),
+            'description' => (string) ($listing->descr ?? ''),
+        );
     }
 }
 
 if (!function_exists('apd_sites_render_gallery')) {
-    function apd_sites_render_gallery(array $listing, string $root, array $trades): void
+    function apd_sites_render_gallery(object $listing, string $root, array $trades): void
     {
-        $gallery   = apd_site_gallery($root, $trades);
-        $listing_id = (int) $listing['id'];
+        $gallery    = apd_site_gallery($root, $trades);
+        $listing_id = (int) $listing->id;
 
         $body  = '<div class="apd-sites-gallery"><h1>Choose a layout</h1>';
-        $body .= '<p>Build a free mini-website for <strong>' . apd_esc($listing['name']) . '</strong>.</p>';
+        $body .= '<p>Build a free mini-website for <strong>' . apd_esc($listing->name) . '</strong>.</p>';
 
         if (!$gallery) {
             $body .= '<p>No layouts are available yet.</p>';
@@ -231,10 +296,10 @@ if (!function_exists('apd_sites_render_gallery')) {
 }
 
 if (!function_exists('apd_sites_render_form')) {
-    function apd_sites_render_form(array $listing, array $meta, array $values = array(), array $errors = array()): void
+    function apd_sites_render_form(object $listing, array $meta, array $values = array(), array $errors = array()): void
     {
         $values = array_merge(apd_sites_prefill($listing), $values);
-        $action = apd_sites_owner_url((int) $listing['id']);
+        $action = apd_sites_owner_url((int) $listing->id);
 
         $body  = '<div class="apd-sites-form"><h1>' . apd_esc($meta['name']) . '</h1>';
         if ($errors) {
@@ -246,9 +311,7 @@ if (!function_exists('apd_sites_render_form')) {
         }
 
         $body .= '<form method="post" enctype="multipart/form-data" action="' . apd_esc($action) . '">';
-        ob_start();
-        apd_nonce('apd_site');
-        $body .= ob_get_clean();
+        $body .= apd_nonce();
         $body .= '<input type="hidden" name="template" value="' . apd_esc($meta['id']) . '">';
 
         foreach ($meta['fields'] as $field) {
@@ -276,7 +339,7 @@ if (!function_exists('apd_sites_render_form')) {
             . '<button type="submit" name="apd_action" value="submit">Submit for review</button></p>';
         $body .= '</form></div>';
 
-        apd_layout('Build your site', $body, apd_sites_owner_url((int) $listing['id']), 'Build your free tradie website.', false);
+        apd_layout('Build your site', $body, apd_sites_owner_url((int) $listing->id), 'Build your free tradie website.', false);
     }
 }
 
@@ -295,13 +358,14 @@ if (!function_exists('apd_sites_render_preview')) {
 }
 
 if (!function_exists('apd_sites_render_live')) {
-    function apd_sites_render_live(array $listing, array $meta, array $data, string $status): void
+    function apd_sites_render_live(object $listing, array $meta, array $data, string $status): void
     {
         $indexing = ('live' === $status) && apd_sites_indexing_on();
         if (!$indexing && function_exists('header')) {
             header('X-Robots-Tag: noindex, follow');
         }
-        $footer = '<footer class="apd-site-footer"><a href="' . apd_esc(apd_url($listing)) . '">Listed on aussieplatform</a></footer>';
+        $listing_url = apd_url($listing);
+        $footer = '<footer class="apd-site-footer"><a href="' . esc_url($listing_url) . '">Listed on aussieplatform</a></footer>';
         echo apd_site_render_document(apd_site_templates_root(), (string) $meta['id'], $data, array(
             'title'       => isset($data['name']) ? (string) $data['name'] : (string) $meta['name'],
             'description' => isset($data['description']) ? (string) $data['description'] : '',
@@ -312,12 +376,11 @@ if (!function_exists('apd_sites_render_live')) {
 }
 
 if (!function_exists('apd_sites_handle_owner_post')) {
-    function apd_sites_handle_owner_post(array $listing, string $root): void
+    function apd_sites_handle_owner_post(object $listing, string $root): void
     {
-        if (!apd_check('apd_site')) {
-            apd_sites_send_404();
-            return;
-        }
+        // apd_check() verifies the nonce, the honeypot and the timing token and
+        // redirects back if any of them fail.
+        apd_check();
 
         $action   = isset($_POST['apd_action']) ? sanitize_key((string) $_POST['apd_action']) : '';
         $template = isset($_POST['template']) ? apd_site_slug((string) $_POST['template']) : '';
@@ -348,14 +411,14 @@ if (!function_exists('apd_sites_handle_owner_post')) {
                 $errors['photos'] = 'Too many uploads. Please try again later.';
             } else {
                 $photo_errors = array();
-                $photos       = apd_sites_handle_photos('apd_photos', (int) $listing['id'], $photo_errors);
+                $photos       = apd_sites_handle_photos('apd_photos', (int) $listing->id, $photo_errors);
                 if ($photo_errors) {
                     $errors['photos'] = implode(' ', $photo_errors);
                 }
             }
         }
 
-        $existing      = apd_sites_get_site_by_listing((int) $listing['id']);
+        $existing      = apd_sites_get_site_by_listing((int) $listing->id);
         $existing_data = $existing ? json_decode((string) $existing['data'], true) : array();
         if (!is_array($existing_data)) {
             $existing_data = array();
@@ -386,10 +449,10 @@ if (!function_exists('apd_sites_handle_owner_post')) {
             return;
         }
 
-        apd_sites_save_site((int) $listing['id'], apd_me(), (string) $meta['id'], $clean, 'pending');
-        apd_sites_insert_report((int) $listing['id'], apd_me());
-        apd_flash('Your website was sent for review.', 'success');
-        apd_go(apd_sites_owner_url((int) $listing['id']));
+        apd_sites_save_site((int) $listing->id, apd_me(), (string) $meta['id'], $clean, 'pending');
+        apd_sites_insert_report((int) $listing->id, apd_me());
+        apd_flash('Your website was sent for review.');
+        apd_go(apd_sites_owner_url((int) $listing->id));
     }
 }
 
@@ -399,18 +462,18 @@ if (!function_exists('apd_sites_handle_owner')) {
         apd_need_login();
         $listing_id = (int) $route['listing_id'];
         $listing    = apd_get($listing_id);
-        if (!is_array($listing)) {
+        if (!is_object($listing)) {
             apd_sites_send_404();
             return;
         }
 
         $is_admin = function_exists('current_user_can') && current_user_can('manage_options');
-        if ((int) $listing['user_id'] !== apd_me() && !$is_admin) {
+        if ((int) $listing->user_id !== apd_me() && !$is_admin) {
             apd_go(apd_sites_claim_url($listing_id));
         }
 
         $root   = apd_site_templates_root();
-        $trades = (isset($listing['trades']) && is_array($listing['trades'])) ? $listing['trades'] : array();
+        $trades = apd_sites_listing_trades($listing);
 
         if ('POST' === strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET')) {
             apd_sites_handle_owner_post($listing, $root);
@@ -448,7 +511,7 @@ if (!function_exists('apd_sites_handle_live')) {
     {
         $listing_id = (int) $route['listing_id'];
         $listing    = apd_get($listing_id);
-        if (!is_array($listing)) {
+        if (!is_object($listing)) {
             apd_sites_send_404();
             return;
         }
@@ -460,7 +523,7 @@ if (!function_exists('apd_sites_handle_live')) {
         }
 
         $status   = (string) $row['status'];
-        $is_owner = apd_me() > 0 && apd_me() === (int) $listing['user_id'];
+        $is_owner = apd_me() > 0 && apd_me() === (int) $listing->user_id;
         $is_admin = function_exists('current_user_can') && current_user_can('manage_options');
 
         if ('live' !== $status && !$is_owner && !$is_admin) {
@@ -508,5 +571,5 @@ if (!function_exists('apd_sites_router')) {
 }
 
 if (function_exists('add_action')) {
-    add_action('template_redirect', 'apd_sites_router');
+    add_action('template_redirect', 'apd_sites_router', 20);
 }

@@ -2,9 +2,15 @@
 
 A WordPress **must-use plugin** that adds tradie mini-websites to the
 [aussieplatform.app](https://aussieplatform.app) directory. It reuses the
-helpers from the directory's own `zz-apd-core.php` (in `apd_trades()`,
+helpers from the directory's own `zz-apd-core.php` (`apd_trades()`,
 `apd_get()`, `apd_layout()`, `apd_nonce()`, `apd_family_ok()`, `apd_tb()`, …)
 and hooks the existing biz page with an action instead of editing core files.
+
+The directory exposes a listing as a **database row object** (`apd_get()`
+returns `$l->id`, `$l->user_id`, `$l->name`, `$l->trades` as a comma separated
+string, `$l->suburb_id`, `$l->phone`, `$l->website`, `$l->email`, `$l->abn`,
+`$l->licence`, `$l->descr`, `$l->hours`), and `apd_url($l)` returns the relative
+`/biz/<id>-<slug>/` path. The plugin follows those conventions exactly.
 
 - Target: **PHP 8.3**, **WordPress 6.x / 7.x**.
 - No Composer runtime dependencies, no JavaScript framework.
@@ -56,7 +62,11 @@ Set these at the top of `zz-apd-sites.php` (all default to `false`):
   `apd_url($l)`. Pending, rejected or draft pages return 404 to the public; the
   owner and admins can still preview them.
 - On the biz page the owner sees a **"Make a free website for this listing"**
-  link (via the `apd_biz_actions` action).
+  link. The core and its rich layer expose no `do_action()`/`apply_filters()`
+  hook on the biz page, so the link is attached through the standard
+  `wp_footer` action and a few lines of inline (framework-free) JavaScript move
+  it next to the existing "Edit this listing" button. The core files are never
+  edited; without JavaScript the link still renders at the end of the page.
 
 ## Templates
 

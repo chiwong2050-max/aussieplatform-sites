@@ -48,7 +48,7 @@ if (!function_exists('apd_sites_resolve_reports')) {
         if ('' === $key) {
             return;
         }
-        $wpdb->update($table, array('status' => 'resolved'), array($key => $listing_id, 'reason' => 'Site review'), array('%s'), array('%d', '%s'));
+        $wpdb->update($table, array('status' => 'closed'), array($key => $listing_id, 'reason' => 'Site review'), array('%s'), array('%d', '%s'));
     }
 }
 

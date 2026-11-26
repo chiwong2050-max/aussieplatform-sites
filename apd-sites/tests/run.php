@@ -13,6 +13,45 @@ $templates  = $apd_sites . '/templates';
 $fixtures   = $apd_sites . '/tests/fixtures';
 $work_dir   = $apd_sites . '/tests/tmp';
 
+/*
+ * Minimal WordPress stubs so the real reference core (reference/zz-apd-core.php)
+ * can be loaded without WordPress. Only the symbols it touches at include time
+ * are needed.
+ */
+if (!defined('ABSPATH')) {
+    define('ABSPATH', $repo_root . '/');
+}
+if (!function_exists('add_action')) {
+    function add_action($hook, $callback = null, $priority = 10, $args = 1)
+    {
+        return true;
+    }
+}
+if (!function_exists('add_filter')) {
+    function add_filter($hook, $callback = null, $priority = 10, $args = 1)
+    {
+        return true;
+    }
+}
+if (!function_exists('apply_filters')) {
+    function apply_filters($hook, $value = null, ...$args)
+    {
+        return $value;
+    }
+}
+if (!function_exists('do_action')) {
+    function do_action($hook, ...$args)
+    {
+        return null;
+    }
+}
+if (!function_exists('add_shortcode')) {
+    function add_shortcode($tag, $callback = null)
+    {
+        return true;
+    }
+}
+
 require_once $src_dir . '/trade-families.php';
 require_once $src_dir . '/sanitise.php';
 require_once $src_dir . '/validate.php';

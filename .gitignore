@@ -4,6 +4,9 @@
 # Test scratch directory
 apd-sites/tests/tmp/
 
+# Editor share artifact
+.trae-html-share-packages/
+
 # OS noise
 .DS_Store
 Thumbs.db
