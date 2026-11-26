@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sample tradie site</title>
+<link rel="stylesheet" href="https://fonts.example.com/site.css">
+<link rel="stylesheet" href="styles.css">
+<script>window.track = function () { alert('x'); };</script>
+<script src="https://cdn.example.com/app.js"></script>
+<style>
+@import url("https://fonts.example.com/import.css");
+.hero { color: #123; }
+</style>
+</head>
+<body onload="boot()">
+<img src="https://www.google-analytics.com/collect?x=1" alt="" width="1" height="1">
+
+<header class="hero">
+  <h1>Your business name</h1>
+  <span class="tagline">{{slogan}}</span>
+  <a href="javascript:alert(1)">Menu</a>
+  <div onclick="doThing()">Tap here</div>
+</header>
+
+<iframe src="https://example.com/widget"></iframe>
+
+<main>
+  <img src="assets/hero.jpg" alt="Hero">
+  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+  <p>Call us on 0412 345 678 or email hello@example.com</p>
+  <form action="https://external.example.com/send" method="post">
+    <input type="text" name="q">
+    <button type="submit">Send</button>
+  </form>
+</main>
+
+<footer>
+  <a href="https://example.com">Learn more</a>
+</footer>
+</body>
+</html>

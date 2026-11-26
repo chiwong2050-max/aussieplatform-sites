@@ -1,0 +1,9 @@
+# Local PHP toolchain downloaded for tests
+.tools/
+
+# Test scratch directory
+apd-sites/tests/tmp/
+
+# OS noise
+.DS_Store
+Thumbs.db

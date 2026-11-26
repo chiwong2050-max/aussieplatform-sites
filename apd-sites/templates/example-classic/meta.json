@@ -1,0 +1,17 @@
+{
+  "id": "example-classic",
+  "name": "Classic hero",
+  "example": true,
+  "trades": ["*"],
+  "fields": [
+    { "key": "name",         "label": "Your business name", "type": "text",     "required": true,  "max": 80 },
+    { "key": "phone",        "label": "Phone number",       "type": "tel",      "required": true,  "max": 32 },
+    { "key": "email",        "label": "Email",              "type": "email",    "required": false, "max": 120 },
+    { "key": "website",      "label": "Website",            "type": "url",      "required": false, "max": 160 },
+    { "key": "suburb",       "label": "Suburb",             "type": "text",     "required": false, "max": 60 },
+    { "key": "service_area", "label": "Service area",       "type": "text",     "required": false, "max": 120 },
+    { "key": "hours",        "label": "Opening hours",      "type": "text",     "required": false, "max": 120 },
+    { "key": "description",  "label": "About your business","type": "textarea", "required": false, "max": 600 },
+    { "key": "services",     "label": "Services (one per line)", "type": "textarea", "required": false, "max": 600 }
+  ]
+}

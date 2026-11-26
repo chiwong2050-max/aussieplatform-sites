@@ -1,0 +1,26 @@
+<main class="page">
+  <section class="gallery">
+    <ul class="gallery-grid">
+      {{#each photos}}<li class="gallery-item"><img src="{{url}}" alt="{{title}}"></li>{{/each}}
+    </ul>
+  </section>
+
+  <header class="intro">
+    <h1>{{name}}</h1>
+    <p>{{description}}</p>
+  </header>
+
+  <section class="services">
+    <h2>What we do</h2>
+    <ul class="service-list">
+      {{#each services}}<li class="service-item">{{title}}</li>{{/each}}
+    </ul>
+  </section>
+
+  <section class="contact">
+    <h2>Get in touch</h2>
+    <p>Phone: <a href="tel:{{phone}}">{{phone}}</a></p>
+    <p>Email: <a href="mailto:{{email}}">{{email}}</a></p>
+    <p>Service area: {{service_area}}</p>
+  </section>
+</main>

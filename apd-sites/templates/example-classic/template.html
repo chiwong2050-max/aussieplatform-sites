@@ -1,0 +1,32 @@
+<header class="hero">
+  <h1 class="hero-title">{{name}}</h1>
+  <p class="hero-sub">{{service_area}}</p>
+  <p class="hero-cta"><a href="tel:{{phone}}">{{phone}}</a></p>
+</header>
+
+<main class="page">
+  <section class="services">
+    <h2>Services</h2>
+    <ul class="service-list">
+      {{#each services}}<li class="service-item">{{title}}</li>{{/each}}
+    </ul>
+  </section>
+
+  <section class="area">
+    <h2>Service area</h2>
+    <p>{{service_area}}</p>
+  </section>
+
+  <section class="about">
+    <h2>About</h2>
+    <p>{{description}}</p>
+  </section>
+
+  <section class="contact">
+    <h2>Contact</h2>
+    <p>Phone: <a href="tel:{{phone}}">{{phone}}</a></p>
+    <p>Email: <a href="mailto:{{email}}">{{email}}</a></p>
+    <p>Hours: {{hours}}</p>
+    <p>Website: <a href="{{website}}">{{website}}</a></p>
+  </section>
+</main>

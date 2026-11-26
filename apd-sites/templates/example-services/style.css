@@ -1,0 +1,70 @@
+:root {
+  --ink: #14181c;
+  --muted: #636e78;
+  --line: #e6eaee;
+  --accent: #c2410c;
+  --bg: #fbfbfc;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.55;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+.page h1 {
+  font-size: 1.8rem;
+}
+
+.page h2 {
+  font-size: 1.2rem;
+  margin: 2rem 0 0.75rem;
+}
+
+.price-list {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.price-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.price-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.price-item:last-child {
+  border-bottom: 0;
+}
+
+.price-title {
+  font-weight: 600;
+}
+
+.price-amount {
+  color: var(--muted);
+}
+
+.contact a {
+  color: var(--accent);
+}
